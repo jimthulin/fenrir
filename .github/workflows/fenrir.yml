@@ -21,6 +21,8 @@ jobs:
           git add data.json index.html dispatch.txt
           git diff --cached --quiet || git commit -m "weekly update $(date -u +%F)"
           git push
+      - name: subject date
+        run: echo "WEEK=$(head -1 dispatch.txt | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}')" >> $GITHUB_ENV
       - name: email dispatch (optional — set the four SMTP secrets to enable)
         if: ${{ env.MAIL_ON == 'true' }}
         env:
@@ -31,7 +33,7 @@ jobs:
           server_port: 465
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
-          subject: "FENRIR dispatch — week ending $(date -u +%F)"
+          subject: "FENRIR dispatch — week ending ${{ env.WEEK }}"
           to: ${{ secrets.MAIL_TO }}
           from: Fenrir Console
           body: file://dispatch.txt
