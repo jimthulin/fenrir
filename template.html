@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FENRIR — OMXS30 Strategy Console</title>
+<style>
+  :root{
+    --bg:#0C0E12; --panel:#141922; --panel2:#101520; --line:#232B36;
+    --text:#C9D2DC; --muted:#66727F; --teal:#6FD4BE; --brass:#D4A24A;
+    --ember:#E05430; --ember-dim:#7A2E1B; --rung1:#22303B; --silver:#93A7BC;
+    --good:#5FBF7F;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{background:var(--bg);}
+  body{
+    font-family:ui-monospace,'SF Mono','Cascadia Mono',Consolas,Menlo,monospace;
+    background:var(--bg); color:var(--text); font-size:13px; line-height:1.5;
+    padding:0 0 60px;
+  }
+  .disp{font-family:'Avenir Next Condensed','Arial Narrow','Helvetica Neue',Arial,sans-serif;
+    text-transform:uppercase; letter-spacing:.28em; font-weight:600;}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 20px;}
+  header{padding:34px 0 18px; display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap;}
+  h1{font-size:30px; letter-spacing:.42em; color:var(--silver); font-weight:700;}
+  h1 span{color:var(--ember);}
+  .sub{color:var(--muted); font-size:11px; margin-top:4px; letter-spacing:.14em;}
+  .badge{border:1px solid var(--line); background:var(--panel); padding:12px 20px; text-align:right;}
+  .badge .lbl{font-size:10px; letter-spacing:.2em; color:var(--muted);}
+  .badge .pos{font-size:24px; font-weight:700; letter-spacing:.1em; margin-top:2px;}
+  .pos-2{color:var(--teal);} .pos-1{color:var(--good);} .pos--2{color:var(--ember);}
+  .badge .dt{font-size:11px; color:var(--muted); margin-top:3px;}
+  section{margin-top:26px;}
+  .sec-h{display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid var(--line); padding-bottom:6px; margin-bottom:10px;}
+  .sec-h .t{font-size:12px; letter-spacing:.26em; color:var(--silver);}
+  .sec-h .n{font-size:10px; color:var(--muted); letter-spacing:.08em;}
+  canvas{display:block; width:100%;}
+  .chainwrap{border:1px solid var(--line); background:var(--panel2); padding:10px 12px 6px;}
+  .panel{border:1px solid var(--line); background:var(--panel2); padding:12px;}
+  .legend{display:flex; gap:18px; font-size:10px; color:var(--muted); margin-top:6px; flex-wrap:wrap; letter-spacing:.06em;}
+  .sw{display:inline-block; width:10px; height:10px; margin-right:5px; vertical-align:-1px;}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;}
+  @media(max-width:820px){.grid3{grid-template-columns:1fr;} h1{font-size:22px;}}
+  .card{border:1px solid var(--line); background:var(--panel); padding:14px;}
+  .card .t{font-size:10px; letter-spacing:.22em; color:var(--muted);}
+  .card .v{font-size:19px; font-weight:700; margin-top:4px; letter-spacing:.06em;}
+  .card .d{font-size:11px; color:var(--muted); margin-top:6px;}
+  .st-BULL{color:var(--teal);} .st-BULLTR{color:var(--good);} .st-CASH{color:var(--silver);} .st-BEAR{color:var(--ember);}
+  table{width:100%; border-collapse:collapse; font-size:12px;}
+  th{font-size:10px; letter-spacing:.16em; color:var(--muted); text-align:left; padding:6px 10px; border-bottom:1px solid var(--line); font-weight:600;}
+  td{padding:5px 10px; border-bottom:1px solid #1A212C;}
+  td.r,th.r{text-align:right;}
+  .ember{color:var(--ember);} .brass{color:var(--brass);} .teal{color:var(--teal);} .mut{color:var(--muted);}
+  .updbar{display:flex; gap:12px; align-items:center; flex-wrap:wrap;}
+  button{
+    font-family:inherit; font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    background:var(--brass); color:#14100A; border:none; padding:11px 22px; cursor:pointer; font-weight:700;
+  }
+  button:hover{filter:brightness(1.1);}
+  button:disabled{background:#3A4250; color:#78828F; cursor:wait;}
+  button.ghost{background:transparent; color:var(--silver); border:1px solid var(--line);}
+  input{
+    font-family:inherit; font-size:13px; background:var(--panel); color:var(--text);
+    border:1px solid var(--line); padding:10px 12px; width:130px;
+  }
+  input:focus{outline:1px solid var(--brass);}
+  .msg{font-size:12px; margin-top:10px; min-height:18px;}
+  .switchbanner{
+    border:1px solid var(--ember); background:linear-gradient(90deg,#2A130C,#17100C);
+    color:var(--ember); padding:14px 18px; font-size:14px; font-weight:700; letter-spacing:.12em;
+    margin-top:14px; display:none;
+  }
+  .note{font-size:10.5px; color:var(--muted); margin-top:8px; line-height:1.6;}
+  .statline{display:flex; gap:26px; flex-wrap:wrap; margin-top:8px; font-size:11px; color:var(--muted);}
+  .statline b{color:var(--text); font-weight:600;}
+
+  .codex details{border-bottom:1px solid #1A212C; padding:4px 0;}
+  .codex details:last-child{border-bottom:none;}
+  .codex summary{cursor:pointer; font-size:11px; letter-spacing:.2em; color:var(--silver);
+    padding:9px 4px; list-style:none; position:relative; user-select:none;}
+  .codex summary::before{content:'▸'; color:var(--brass); margin-right:10px; display:inline-block; transition:transform .15s;}
+  .codex details[open] summary::before{transform:rotate(90deg);}
+  .codex summary:hover{color:var(--text);}
+  .cx{padding:2px 4px 14px 22px; font-size:12px; line-height:1.75;}
+  .cx p{margin-bottom:7px;}
+  .cx b{font-weight:700;}
+
+  /* HERO */
+  .hero{display:grid; grid-template-columns:340px 1fr; gap:18px; margin-top:10px;}
+  @media(max-width:900px){.hero{grid-template-columns:1fr;}}
+  .regime{border:1px solid var(--line); padding:26px 24px; position:relative; overflow:hidden;
+    display:flex; flex-direction:column; justify-content:center; min-height:230px;}
+  .regime.r2{background:radial-gradient(ellipse at 30% 20%, rgba(111,212,190,.14), transparent 60%), var(--panel2); border-color:#2C4A44;}
+  .regime.r1{background:radial-gradient(ellipse at 30% 20%, rgba(95,191,127,.10), transparent 60%), var(--panel2); border-color:#2E4234;}
+  .regime.rb{background:radial-gradient(ellipse at 30% 20%, rgba(224,84,48,.20), transparent 60%), var(--panel2); border-color:#6A2C1C;}
+  .regime .rl{font-size:10px; letter-spacing:.3em; color:var(--muted);}
+  .regime .rp{font-size:44px; font-weight:700; letter-spacing:.08em; line-height:1.1; margin:8px 0 2px;}
+  .regime .rw{font-size:12px; letter-spacing:.24em; margin-top:2px;}
+  .regime .ri{font-size:11px; color:var(--muted); margin-top:14px; line-height:1.7;}
+  .regime .glyph{position:absolute; right:-12px; bottom:-26px; font-size:150px; opacity:.05; font-weight:700; pointer-events:none;}
+  .gauges{border:1px solid var(--line); background:var(--panel2); padding:16px 18px;
+    display:grid; grid-template-columns:1fr 1fr; gap:14px 26px;}
+  @media(max-width:700px){.gauges{grid-template-columns:1fr;}}
+  .gwide{grid-column:1 / -1;}
+  .gauge .gl{display:flex; justify-content:space-between; font-size:10px; letter-spacing:.14em; color:var(--muted); margin-bottom:4px;}
+  .gauge .gl b{color:var(--text); font-weight:600; letter-spacing:.04em;}
+  .track{position:relative; height:14px; border:1px solid #2A3440; background:#161C26;}
+  .zone{position:absolute; top:0; bottom:0;}
+  .needle{position:absolute; top:-4px; bottom:-4px; width:2px; background:#EDEEF0; box-shadow:0 0 6px rgba(237,238,240,.7);}
+  .tick{position:absolute; top:100%; font-size:9px; color:#55606C; transform:translateX(-50%); padding-top:2px;}
+  .gauge{padding-bottom:12px;}
+  .consdots{display:flex; gap:8px; align-items:center; height:14px;}
+  .cd{width:22px; height:10px; background:#1C2430; border:1px solid #2A3440;}
+  .cd.on2{background:var(--teal); border-color:var(--teal);}
+  .cd.on1{background:var(--good); border-color:var(--good);}
+  .cd.on0{background:var(--silver); border-color:var(--silver);}
+  .cd.onm{background:var(--ember); border-color:var(--ember);}
+
+  /* SAGA */
+  .saga{border-left:2px solid #2A3440; margin-left:6px; padding-left:26px;}
+  .era{position:relative; padding:4px 0 26px;}
+  .era::before{content:''; position:absolute; left:-33px; top:10px; width:12px; height:12px;
+    background:var(--bg); border:2px solid var(--silver);}
+  .era.bear::before{border-color:var(--ember); background:var(--ember-dim);}
+  .era.chain1::before{border-color:var(--good);}
+  .era .yr{font-size:10px; letter-spacing:.24em; color:var(--brass);}
+  .era h3{font-size:14px; letter-spacing:.18em; color:var(--text); margin:3px 0 8px; font-weight:600;}
+  .era .trig{font-size:12px; line-height:1.7; color:#A8B2BD; max-width:860px;}
+  .era .resp{font-size:12px; line-height:1.7; color:var(--text); max-width:860px; margin-top:7px;}
+  .era .resp b{color:var(--brass); font-weight:600; letter-spacing:.06em;}
+  .era .stat{font-size:11px; color:var(--muted); margin-top:9px; letter-spacing:.03em;}
+  .era .stat b{color:var(--text); font-weight:600;}
+  .era canvas{margin-top:8px; border:1px solid #1E2733; max-width:860px;}
+  @media(prefers-reduced-motion:no-preference){
+    .badge .pos{animation:emberIn .6s ease;}
+    @keyframes emberIn{from{opacity:0; transform:translateY(4px);} to{opacity:1;}}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header style="padding:26px 0 6px;">
+  <div>
+    <h1 class="disp">FENR<span>I</span>R</h1>
+    <div class="sub disp">OMXS30 · LADDER ×2/×1 · BEAR ×2 ON DUAL CONSENSUS · WEEKLY FRIDAY CLOSES</div>
+  </div>
+  <div class="badge" style="border:none; background:none; padding:0;">
+    <div class="dt" id="curDt">—</div>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="regime" id="regimeBox">
+    <div class="rl disp">Current regime</div>
+    <div class="rp" id="curPos">—</div>
+    <div class="rw disp" id="wolfLine">—</div>
+    <div class="ri" id="regimeInstr">—</div>
+    <div class="glyph">ᚠ</div>
+  </div>
+  <div class="gauges">
+    <div class="gauge gwide">
+      <div class="gl"><b>LADDER — OMX vs MA52w</b><span id="gLadderV">—</span></div>
+      <div class="track" id="tLadder"></div>
+    </div>
+    <div class="gauge"><div class="gl"><b>OMX RSI-14</b><span id="gOR">—</span></div><div class="track" id="tOR"></div></div>
+    <div class="gauge"><div class="gl"><b>S&amp;P RSI-14</b><span id="gSR">—</span></div><div class="track" id="tSR"></div></div>
+    <div class="gauge"><div class="gl"><b>OMX MACD%</b><span id="gOM">—</span></div><div class="track" id="tOM"></div></div>
+    <div class="gauge"><div class="gl"><b>S&amp;P MACD%</b><span id="gSM">—</span></div><div class="track" id="tSM"></div></div>
+    <div class="gauge"><div class="gl"><b>OMX Mom4w</b><span id="gOMo">—</span></div><div class="track" id="tOMo"></div></div>
+    <div class="gauge"><div class="gl"><b>S&amp;P Mom4w</b><span id="gSMo">—</span></div><div class="track" id="tSMo"></div></div>
+    <div class="gauge gwide">
+      <div class="gl"><b>CONSENSUS LEVERAGE</b><span id="gCons">—</span></div>
+      <div class="consdots" id="tCons"></div>
+    </div>
+  </div>
+</div>
+
+<div class="switchbanner" id="switchBanner"></div>
+
+__DISPATCH__
+
+<section>
+  <div class="sec-h"><span class="t disp">The Chain — position history 1986 → now</span><span class="n" id="chainNote"></span></div>
+  <div class="chainwrap">
+    <canvas id="chain" height="46"></canvas>
+    <canvas id="chainAxis" height="16"></canvas>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--teal)"></span>Bull ×2 (above MA52w)</span>
+      <span><span class="sw" style="background:var(--rung1); border:1px solid #33414F"></span>Bull ×1 (chained, below MA52w)</span>
+      <span><span class="sw" style="background:var(--ember)"></span>Bear ×2 (loosed — both machines BEAR)</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-h"><span class="t disp">OMXS30 · MA52w · regimes</span><span class="n">log scale</span></div>
+  <div class="panel"><canvas id="price" height="300"></canvas></div>
+</section>
+
+<section>
+  <div class="sec-h"><span class="t disp">Strategy development</span><span class="n">1 = Oct 1986 · weekly sim · 0.15%/switch</span></div>
+  <div class="panel">
+    <canvas id="equity" height="280"></canvas>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--brass)"></span>Fenrir</span>
+      <span><span class="sw" style="background:#7A6A3A"></span>×2 buy &amp; hold</span>
+      <span><span class="sw" style="background:#4A5563"></span>×1 buy &amp; hold</span>
+    </div>
+    <div class="statline" id="stats"></div>
+  </div>
+</section>
+
+<section>
+  <div class="grid3">
+    <div class="card">
+      <div class="t disp">OMX machine</div>
+      <div class="v" id="omxState">—</div>
+      <div class="d" id="omxDetail">—</div>
+    </div>
+    <div class="card">
+      <div class="t disp">S&amp;P 500 machine</div>
+      <div class="v" id="spxState">—</div>
+      <div class="d" id="spxDetail">—</div>
+    </div>
+    <div class="card">
+      <div class="t disp">Ladder · consensus</div>
+      <div class="v" id="ladderState">—</div>
+      <div class="d" id="consDetail">—</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-h"><span class="t disp">Ragnarök log — bear overrides</span><span class="n" id="epCount"></span></div>
+  <div class="panel" style="padding:0;">
+    <table id="episodes"><thead><tr>
+      <th>From</th><th>To</th><th class="r">Weeks</th><th class="r">OMX move</th><th class="r">Bear ×2 P&amp;L</th>
+    </tr></thead><tbody></tbody></table>
+  </div>
+</section>
+
+<section>
+  <div class="sec-h"><span class="t disp">MSCI World deployment — same rules, second index</span><span class="n">local MA52 ladder · World + S&amp;P consensus</span></div>
+  <div class="grid3">
+    <div class="card">
+      <div class="t disp">World position</div>
+      <div class="v" id="wPos">—</div>
+      <div class="d" id="wInstr">—</div>
+    </div>
+    <div class="card">
+      <div class="t disp">World machine</div>
+      <div class="v" id="wState">—</div>
+      <div class="d" id="wDetail">—</div>
+    </div>
+    <div class="card">
+      <div class="t disp">World · MA52w</div>
+      <div class="v" id="wLadder">—</div>
+      <div class="d" id="wMa">—</div>
+    </div>
+  </div>
+  <div class="chainwrap" style="margin-top:14px;">
+    <canvas id="wchain" height="26"></canvas>
+    <div class="legend"><span class="mut">World position history 1986 → now · same encoding as The Chain · backtest 16.5%/yr · −62% MDD · Sharpe 0.74 (the most credible out-of-sample numbers in the project)</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-h"><span class="t disp">The Codex — strategy definition</span><span class="n">complete rules · click to expand</span></div>
+  <div class="panel codex">
+    <details open>
+      <summary class="disp">Position rule — evaluated every Friday close, traded Monday</summary>
+      <div class="cx">
+        <p><b>1.</b> If <span class="ember">both machines read BEAR</span> (consensus leverage −2) → <b class="ember">Bear ×2</b> — XACT Bear 2 (SE0005466505)</p>
+        <p><b>2.</b> Else if OMXS30 close &gt; MA52w → <b class="teal">Bull ×2</b> — XACT Bull 2 (SE0003051010)</p>
+        <p><b>3.</b> Else → <b style="color:var(--good)">Bull ×1</b> — plain OMXS30 ETF. Fenrir never holds cash.</p>
+        <p class="mut">The ladder is the base: full leverage above trend, half below, never out. The override is rare by design — the wolf is loosed only when two independent machines agree.</p>
+        <p><b>MSCI World deployment</b> — identical rules on the World index: ×2 via Amundi MSCI World 2x Lev (LVWC, FR0014010HV4, TER 0.60%), ×1 via any plain World ETF, Bear via a −2x S&amp;P 500 proxy (no inverse World UCITS exists). Panel backtest 16.5%/yr, −62% MDD, Sharpe 0.74 — out-of-sample for every threshold.</p>
+      </div>
+    </details>
+    <details>
+      <summary class="disp">The machines — identical V8b++ rules on OMXS30 and S&amp;P 500</summary>
+      <div class="cx">
+        <p><b class="teal">Bull ×2</b> (RSI-entered) → Cash on RSI-14 ≥ 69</p>
+        <p><b style="color:var(--good)">Bull-TR</b> (trend-entered) → Cash on RSI ≥ 69 <span class="mut">or</span> close &lt; MA40w</p>
+        <p><b class="mut">Cash</b> → Bull on RSI ≤ 35 <span class="mut">and</span> MACD% &gt; −2 &nbsp;·&nbsp; → Bear ×2 on Mom4w &lt; −4% <span class="mut">and</span> close &lt; MA40w &nbsp;·&nbsp; → Bull-TR on close &gt; MA40w <span class="mut">and</span> RSI 40–60</p>
+        <p><b class="ember">Bear ×2</b> → Bull on RSI ≤ 35 <span class="mut">and</span> MACD% &gt; −2 &nbsp;·&nbsp; → Cash on close &gt; MA40w</p>
+        <p class="mut">Priority within each state is top-to-bottom as listed. A blocked entry dies — no pending signals. Only the BEAR state matters to Fenrir; everything else is the arming sequence that makes BEAR rare.</p>
+      </div>
+    </details>
+    <details>
+      <summary class="disp">Indicator definitions</summary>
+      <div class="cx">
+        <p><b>RSI-14</b> — Wilder smoothing on weekly % changes, seeded with a simple 14-week average. Equivalently: price's distance from its 14w Wilder EMA in units of average weekly move — RSI 35 ≈ 3.9 units below, RSI 69 ≈ 4.9 above.</p>
+        <p><b>MACD%</b> — (EMA12w − EMA20w) / close × 100. The −2 gate measures downtrend depth at the oversold moment; deep MACD blocks knife-catching entries and keeps shorts running in grinds.</p>
+        <p><b>MA40w / MA52w</b> — simple averages of weekly closes. MA40w (≈ MA200 daily) anchors the machines; MA52w anchors the ladder.</p>
+        <p><b>Mom4w</b> — 4-week price change. The collapse detector: fires within weeks of a top, which is the only place a short earns its risk.</p>
+        <p><b>Consensus</b> — average of the two machines' leverages (Bull/Bull-TR = +2, Cash = 0, Bear = −2). Fenrir reads only the −2 reading.</p>
+      </div>
+    </details>
+    <details>
+      <summary class="disp">Provenance &amp; caveats</summary>
+      <div class="cx">
+        <p><b>Backtest</b> (Oct 1986 – Apr 2026, 0.15%/switch): 19.3%/yr · −69% MDD · Sharpe 0.70 · beats ×1 B&amp;H in 99.9% of 10-year windows, ×2 B&amp;H in 85%.</p>
+        <p><b>Honest expectation:</b> thresholds were set in-sample on this exact path; walk-forward testing halves the machine excess and the cross-index panel (DAX +6.2pp, Nasdaq +5.5, Nikkei +4.7, MSCI World +2.5, FTSE −3.0) puts the override's transferable kicker at 1–2pp. Expect live nearer 14–16%/yr. The −69% drawdown is real and arrives while ×1 B&amp;H is down ~70% alongside — Fenrir is built to beat the index through cycles, not to avoid bear-market pain.</p>
+        <p><b>Design grammar</b> (the part that generalizes): a one-parameter structural base that nearly dominates ×1 by construction · an armed sequence (euphoric top → momentum collapse) rather than raw momentum · a dual-market veto that removes ~90% of false bear flags · a regime-aware short cover via the MACD gate.</p>
+        <p class="mut">Data: countryeconomy.com (1986–2008) + Nasdaq GIW (2008–2026) + live tracker splice; S&amp;P 500 via Yahoo ^GSPC. Assembled Aug 2026. Weekly-rebalanced simulation; real daily-rebalanced ×2 products decay slightly more. Not advice from a licensed financial advisor.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section>
+  <div class="sec-h"><span class="t disp">Weekly update</span><span class="n">Friday routine</span></div>
+  <div class="panel">
+    <div class="updbar">
+      <button id="pullBtn">Pull latest closes</button>
+      <span class="mut">or add manually:</span>
+      <input id="mOmx" placeholder="OMXS30 close" inputmode="decimal">
+      <input id="mSpx" placeholder="S&amp;P 500 close" inputmode="decimal">
+      <input id="mWld" placeholder="MSCI World (optional)" inputmode="decimal">
+      <button class="ghost" id="addBtn">Add week</button>
+      <button class="ghost" id="copyBtn">Copy data</button>
+    </div>
+    <div class="msg" id="msg"></div>
+    <div class="note">Pull asks a Claude web-search call for every Friday close since the last row, then recomputes both machines and the position. Added weeks live in this session only — after updating, use Copy data and paste the block back in chat to get a re-baked file. Rules: Bull ×2 above MA52w · Bull ×1 below · Bear ×2 only when the OMX and S&amp;P machines both read BEAR. Machines: V8b++ (RSI-14 35/69, Mom4w −4% + MA40w, MACD% −2 gate, 40–60 trend re-entry). Backtest 1986–2026: 19.3%/yr, −69% MDD — expect live nearer 14–16% (walk-forward discount). Not investment advice from a licensed advisor.</div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-h"><span class="t disp">The Saga — forty years of the wolf</span><span class="n">real-world triggers · strategy response · numbers computed live from the record</span></div>
+  <div class="saga">
+<div class="era " data-from="1986-10-03" data-to="1988-12-30">
+      <div class="yr disp">1986 — 1988</div>
+      <h3 class="disp">1987 · BLACK MONDAY</h3>
+      <div class="trig">October 19, 1987: portfolio insurance and program trading turn a correction into the largest one-day crash in modern history. Stockholm, five hours ahead of New York, absorbs it across that whole week.</div>
+      <div class="resp">The wolf rode <b>×2 into the crash</b> — no signal is fast enough for a one-day event, and Fenrir doesn't pretend otherwise. The MA52 break stepped it to ×1 in the aftermath, and the 1988 recovery reclaimed the trend for ×2. The founding lesson: fast crashes are absorbed at reduced strength, never dodged.</div>
+      <canvas id="saga0" height="18"></canvas>
+      <div class="stat" id="sagastat0">—</div>
+    </div>
+<div class="era chain1" data-from="1990-01-05" data-to="1993-12-31">
+      <div class="yr disp">1990 — 1993</div>
+      <h3 class="disp">1990–93 · THE SWEDISH BANKING CRISIS</h3>
+      <div class="trig">A burst property bubble takes down Första Sparbanken, Nordbanken and Gota Bank. September 1992: the Riksbank defends the krona with a 500% marginal rate, and on November 19 the peg falls and the krona floats.</div>
+      <div class="resp">The longest chained stretch in the record — <b>×1 for most of three years</b>. The override never fired because Wall Street wasn't in a synchronized bear; this was Sweden's own crisis, and the dual veto held its fire, correctly by the panel evidence. The ×1 rung did the quiet work the Nikkei test later confirmed: half strength through a grind still compounds. The krona float lit the fuse of the 90s bull, and the wolf went ×2 into it.</div>
+      <canvas id="saga1" height="18"></canvas>
+      <div class="stat" id="sagastat1">—</div>
+    </div>
+<div class="era bear" data-from="2000-03-03" data-to="2003-12-26">
+      <div class="yr disp">2000 — 2003</div>
+      <h3 class="disp">2000–03 · DOTCOM — THE FIRST RAGNARÖK</h3>
+      <div class="trig">The March 2000 Nasdaq top. Stockholm's exposure is extreme — Ericsson alone is a third of the index — and the decline runs 30 months, punctuated by vicious bear-market rallies.</div>
+      <div class="resp">The defining episode. Euphoric spring top armed both machines; by <b>October 2000 both read BEAR and the wolf was loosed</b> for the first time — five months short through the first collapse leg, the largest single contribution to Fenrir's lifetime edge over ×2 buy &amp; hold. Then chained at ×1 through the grind while ×2 B&amp;H lost 93% and needed until the 2020s to recover. The MA52 reclaim in spring 2003 sent it back to full strength near the bottom.</div>
+      <canvas id="saga2" height="18"></canvas>
+      <div class="stat" id="sagastat2">—</div>
+    </div>
+<div class="era bear" data-from="2007-06-01" data-to="2009-12-25">
+      <div class="yr disp">2007 — 2009</div>
+      <h3 class="disp">2007–09 · GLOBAL FINANCIAL CRISIS</h3>
+      <div class="trig">August 2007: the quant quake and BNP Paribas freezing funds. Autumn: Bear Stearns wobbles, SocGen unwinds. September 2008: Lehman. March 2009: the bottom.</div>
+      <div class="resp">Three short bursts — <b>Aug 2007, Nov 2007, Jan 2008</b> — as the machines caught the topping process in real time. The shorts expired before Lehman, so the autumn was ridden at ×1: painful, roughly half the index's leveraged loss, and the honest reminder that the override catches tops, not every leg down. Mid-2009 reclaim → ×2 into the recovery.</div>
+      <canvas id="saga3" height="18"></canvas>
+      <div class="stat" id="sagastat3">—</div>
+    </div>
+<div class="era " data-from="2010-01-08" data-to="2019-12-27">
+      <div class="yr disp">2010 — 2019</div>
+      <h3 class="disp">2010–19 · THE LONG BULL, WITH TREMORS</h3>
+      <div class="trig">Euro crisis 2011, the October 2014 growth scare, China's August 2015 devaluation, the 2015–16 industrial recession, the Q4 2018 rate tantrum.</div>
+      <div class="resp">Mostly ×2, the decade Fenrir is built to fully harvest. The tremors show the machinery breathing: <b>single-week flags in Oct 2014 and Aug 2015</b> (both machines briefly aligned), and ×1 stints in 2011, 2015–16 and late 2018 as the MA52 broke and recovered. Every dip resolved fast — the modern regime in miniature.</div>
+      <canvas id="saga4" height="18"></canvas>
+      <div class="stat" id="sagastat4">—</div>
+    </div>
+<div class="era bear" data-from="2020-01-03" data-to="2021-12-31">
+      <div class="yr disp">2020 — 2021</div>
+      <h3 class="disp">2020 · COVID — THE PERFECT STRIKE</h3>
+      <div class="trig">February 24–28, 2020: the fastest 30% decline in market history begins as northern Italy locks down. March 23: the bottom. Then the greatest stimulus-driven rally on record.</div>
+      <div class="resp">The design's masterpiece. <b>Both machines flipped BEAR on February 28</b> — the exact week the crash began — and the wolf was short through the collapse itself. The gated RSI covered near the bottom in mid-March (shallow MACD = V-crash = cover), the ladder held ×1 through the chop, and the MA52 reclaim caught the melt-up at ×2. Signal, veto and gate each did precisely their job within four weeks.</div>
+      <canvas id="saga5" height="18"></canvas>
+      <div class="stat" id="sagastat5">—</div>
+    </div>
+<div class="era bear" data-from="2022-01-07" data-to="2023-12-29">
+      <div class="yr disp">2022 — 2023</div>
+      <h3 class="disp">2022 · INFLATION AND WAR</h3>
+      <div class="trig">CPI prints not seen in forty years, the Fed's fastest hiking cycle since Volcker, and Russia's February invasion of Ukraine.</div>
+      <div class="resp">The override fired in <b>the top weeks of January–February 2022</b>, shorting the break, then chained ×1 through the down year while ×2 B&amp;H bled. The 2023 reclaim restored full strength. A clean mid-size demonstration: top caught, grind endured at half strength, recovery harvested.</div>
+      <canvas id="saga6" height="18"></canvas>
+      <div class="stat" id="sagastat6">—</div>
+    </div>
+<div class="era " data-from="2025-01-03" data-to="2026-07-31">
+      <div class="yr disp">2025 — 2026</div>
+      <h3 class="disp">2025–26 · TARIFFS AND THE PRESENT</h3>
+      <div class="trig">April 2025: a tariff shock and a violent one-week air pocket. Then recovery to new highs, a February 2026 top, a March wobble, and the current advance.</div>
+      <div class="resp">The April 2025 V was too fast and too local for the override — absorbed per the 1987 doctrine, with the machines re-entering long on the gated RSI within a week of the low. The 2026 spring wobble briefly tested the MA52. As of the latest close the wolf runs <b>×2, chained and pulling</b> — this entry updates as new weeks arrive.</div>
+      <canvas id="saga7" height="18"></canvas>
+      <div class="stat" id="sagastat7">—</div>
+    </div>
+  </div>
+</section>
+
+</div>
+<script>
+const DATA = __DATA__;
+
+
+function machineStates(C){
+  const m=C.length, chg=new Array(m).fill(0);
+  for(let i=1;i<m;i++) chg[i]=(C[i]/C[i-1]-1)*100;
+  const R=new Array(m).fill(NaN); let ag=0,al=0;
+  for(let i=1;i<=14;i++){ag+=Math.max(chg[i],0); al+=Math.max(-chg[i],0);}
+  ag/=14; al/=14; R[14]=100-100/(1+ag/al);
+  for(let i=15;i<m;i++){ag=(ag*13+Math.max(chg[i],0))/14; al=(al*13+Math.max(-chg[i],0))/14;
+    R[i]= al===0?100:100-100/(1+ag/al);}
+  const mom4=new Array(m).fill(NaN);
+  for(let i=4;i<m;i++) mom4[i]=(C[i]/C[i-4]-1)*100;
+  const MP=new Array(m).fill(0); let e12=C[0],e20=C[0];
+  for(let i=1;i<m;i++){e12=C[i]*2/13+e12*11/13; e20=C[i]*2/21+e20*19/21; MP[i]=100*(e12-e20)/C[i];}
+  const M40=new Array(m).fill(NaN), M52=new Array(m).fill(NaN);
+  let cs=0; const csA=new Array(m);
+  for(let i=0;i<m;i++){cs+=C[i]; csA[i]=cs;}
+  for(let i=39;i<m;i++) M40[i]=(csA[i]-(i>=40?csA[i-40]:0))/40;
+  for(let i=51;i<m;i++) M52[i]=(csA[i]-(i>=52?csA[i-52]:0))/52;
+  const st=new Array(m).fill(0);
+  for(let i=1;i<m;i++){
+    let s=st[i-1], ns=s;
+    const r=R[i], m4=mom4[i], mm=M40[i], c=C[i], mp=MP[i];
+    if(!(isNaN(mm)||isNaN(r))){
+      if(s===0){ if(r>=69) ns=2; }
+      else if(s===1){ if(r>=69||c<mm) ns=2; }
+      else if(s===2){
+        if(r<=35&&mp>-2) ns=0;
+        else if(m4<-4&&c<mm) ns=3;
+        else if(c>mm&&r>=40&&r<=60) ns=1;
+      } else {
+        if(r<=35&&mp>-2) ns=0;
+        else if(c>mm) ns=2;
+      }
+    }
+    st[i]=ns;
+  }
+  return {st,R,M52,M40,MP,mom4};
+}
+function fenrir(O,S){
+  const mo=machineStates(O), ms=machineStates(S), m=O.length;
+  const pos=new Array(m), lev=[2,2,0,-2];
+  for(let i=0;i<m;i++){
+    const bear=(mo.st[i]===3&&ms.st[i]===3);
+    const above=isNaN(mo.M52[i])?true:O[i]>mo.M52[i];
+    pos[i]=bear?-2:(above?2:1);
+  }
+  return {pos,mo,ms};
+}
+
+
+const NAMES=['BULL','BULL-TR','CASH','BEAR'];
+const CLS=['st-BULL','st-BULLTR','st-CASH','st-BEAR'];
+let state=null;
+
+function compute(){
+  const O=DATA.map(r=>r[1]), S=DATA.map(r=>r[2]), W=DATA.map(r=>r[3]);
+  const {pos,mo,ms}=fenrir(O,S);
+  const mw=machineStates(W);
+  const posW=new Array(W.length);
+  for(let i=0;i<W.length;i++){
+    const bear=(mw.st[i]===3&&ms.st[i]===3);
+    const above=isNaN(mw.M52[i])?true:W[i]>mw.M52[i];
+    posW[i]=bear?-2:(above?2:1);
+  }
+  // equity sims
+  const m=O.length;
+  function sim(levArr){
+    const eq=new Array(m); eq[0]=1;
+    for(let i=1;i<m;i++){
+      let e=eq[i-1]*(1+levArr[i-1]*(O[i]/O[i-1]-1));
+      if(levArr[i]!==levArr[i-1]) e*=(1-0.0015*Math.abs(levArr[i]-levArr[i-1])/2);
+      eq[i]=Math.max(e,1e-9);
+    }
+    return eq;
+  }
+  const eqF=sim(pos), eq2=sim(new Array(m).fill(2)), eq1=sim(new Array(m).fill(1));
+  state={O,S,W,pos,mo,ms,mw,posW,eqF,eq2,eq1};
+  render();
+}
+
+function cagr(eq){
+  const yrs=(new Date(DATA[DATA.length-1][0])-new Date(DATA[0][0]))/3.15576e10;
+  return 100*(Math.pow(eq[eq.length-1],1/yrs)-1);
+}
+function mdd(eq){let p=0,w=0; for(const v of eq){p=Math.max(p,v); w=Math.min(w,v/p-1);} return 100*w;}
+
+function setupCanvas(id){
+  const c=document.getElementById(id);
+  const dpr=window.devicePixelRatio||1;
+  const w=c.clientWidth;
+  const h=parseInt(c.getAttribute('height'));
+  c.width=w*dpr; c.height=h*dpr; c.style.height=h+'px';
+  const ctx=c.getContext('2d'); ctx.scale(dpr,dpr);
+  return {ctx,w,h};
+}
+
+function xScale(w){ const m=DATA.length; return i=>i/(m-1)*w; }
+
+function drawChain(){
+  const {ctx,w,h}=setupCanvas('chain');
+  const X=xScale(w), m=DATA.length, bw=Math.max(w/m,0.5);
+  for(let i=0;i<m;i++){
+    const p=state.pos[i];
+    if(p===2) ctx.fillStyle='rgba(111,212,190,0.85)';
+    else if(p===1) ctx.fillStyle='#22303B';
+    else ctx.fillStyle='#E05430';
+    const y = p===-2?0:(p===1?14:6), hh = p===-2?h:(p===1?h-20:h-12);
+    ctx.fillRect(X(i),y,bw+0.6,hh);
+  }
+  // axis
+  const ax=setupCanvas('chainAxis'); ax.ctx.fillStyle='#66727F'; ax.ctx.font='10px ui-monospace,monospace';
+  for(let y=1990;y<=2026;y+=5){
+    const i=DATA.findIndex(r=>r[0]>=y+'-01-01');
+    if(i>0) ax.ctx.fillText(String(y), X(i)-10, 12);
+  }
+  document.getElementById('chainNote').textContent =
+    state.pos.filter(p=>p===-2).length+' bear weeks · '+state.pos.filter(p=>p===1).length+' chained weeks · '+DATA.length+' total';
+}
+
+function drawWChain(){
+  const {ctx,w,h}=setupCanvas('wchain');
+  const X=xScale(w), m=DATA.length, bw=Math.max(w/m,0.5);
+  for(let i=0;i<m;i++){
+    const p=state.posW[i];
+    if(p===2) ctx.fillStyle='rgba(111,212,190,0.7)';
+    else if(p===1) ctx.fillStyle='#22303B';
+    else ctx.fillStyle='#E05430';
+    const y=p===-2?0:(p===1?8:4), hh=p===-2?h:(p===1?h-12:h-8);
+    ctx.fillRect(X(i),y,bw+0.6,hh);
+  }
+}
+function logY(v,min,max,h,pad){ 
+  const lv=Math.log(v), lmin=Math.log(min), lmax=Math.log(max);
+  return h-pad - (lv-lmin)/(lmax-lmin)*(h-2*pad);
+}
+
+function shadeRegimes(ctx,w,h){
+  const X=xScale(w), m=DATA.length, bw=Math.max(w/m,0.5);
+  for(let i=0;i<m;i++){
+    const p=state.pos[i];
+    if(p===1){ ctx.fillStyle='rgba(34,48,59,0.55)'; ctx.fillRect(X(i),0,bw+0.6,h); }
+    else if(p===-2){ ctx.fillStyle='rgba(224,84,48,0.30)'; ctx.fillRect(X(i),0,bw+0.6,h); }
+  }
+}
+
+function drawPrice(){
+  const {ctx,w,h}=setupCanvas('price');
+  const X=xScale(w), O=state.O, m=O.length;
+  const mn=Math.min(...O)*0.95, mx=Math.max(...O)*1.05;
+  shadeRegimes(ctx,w,h);
+  // gridlines
+  ctx.strokeStyle='#1C2430'; ctx.fillStyle='#66727F'; ctx.font='10px ui-monospace,monospace';
+  for(const g of [125,250,500,1000,2000,3000]){
+    const y=logY(g,mn,mx,h,14);
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+    ctx.fillText(String(g),4,y-3);
+  }
+  // MA52
+  const M=state.mo.M52;
+  ctx.strokeStyle='#D4A24A'; ctx.lineWidth=1.4; ctx.beginPath(); let started=false;
+  for(let i=0;i<m;i++){ if(isNaN(M[i]))continue;
+    const x=X(i),y=logY(M[i],mn,mx,h,14);
+    if(!started){ctx.moveTo(x,y);started=true;} else ctx.lineTo(x,y);}
+  ctx.stroke();
+  // price
+  ctx.strokeStyle='#6FD4BE'; ctx.lineWidth=1.2; ctx.beginPath();
+  for(let i=0;i<m;i++){ const x=X(i),y=logY(O[i],mn,mx,h,14);
+    if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);}
+  ctx.stroke();
+}
+
+function drawEquity(){
+  const {ctx,w,h}=setupCanvas('equity');
+  const X=xScale(w), m=DATA.length;
+  const all=[...state.eqF,...state.eq2,...state.eq1];
+  const mn=Math.max(Math.min(...all)*0.9,0.05), mx=Math.max(...all)*1.1;
+  shadeRegimes(ctx,w,h);
+  ctx.strokeStyle='#1C2430'; ctx.fillStyle='#66727F'; ctx.font='10px ui-monospace,monospace';
+  for(const g of [1,10,100,1000]){
+    if(g<mn||g>mx)continue;
+    const y=logY(g,mn,mx,h,14);
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+    ctx.fillText(g+'×',4,y-3);
+  }
+  const series=[[state.eq1,'#4A5563',1],[state.eq2,'#7A6A3A',1],[state.eqF,'#D4A24A',1.7]];
+  for(const [eq,col,lw] of series){
+    ctx.strokeStyle=col; ctx.lineWidth=lw; ctx.beginPath();
+    for(let i=0;i<m;i++){ const x=X(i),y=logY(eq[i],mn,mx,h,14);
+      if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);}
+    ctx.stroke();
+  }
+  document.getElementById('stats').innerHTML=
+    'Fenrir <b>'+cagr(state.eqF).toFixed(1)+'%/yr</b> · MDD <b>'+mdd(state.eqF).toFixed(0)+'%</b> · '+
+    state.eqF[m-1].toFixed(0)+'×&nbsp;&nbsp;|&nbsp;&nbsp;×2 B&H '+cagr(state.eq2).toFixed(1)+'% · '+mdd(state.eq2).toFixed(0)+'%'+
+    '&nbsp;&nbsp;|&nbsp;&nbsp;×1 B&H '+cagr(state.eq1).toFixed(1)+'% · '+mdd(state.eq1).toFixed(0)+'%';
+}
+
+function renderEpisodes(){
+  const tb=document.querySelector('#episodes tbody'); tb.innerHTML='';
+  const m=DATA.length; let i=0,count=0;
+  while(i<m){
+    if(state.pos[i]===-2){
+      let j=i; while(j+1<m && state.pos[j+1]===-2) j++;
+      const oIn=state.O[Math.max(i-1,0)], oOut=state.O[Math.min(j+1,m-1)];
+      const move=100*(oOut/oIn-1);
+      let pnl=1; for(let k=i;k<=j;k++){ const k2=Math.min(k+1,m-1); pnl*=(1-2*(state.O[k2]/state.O[k]-1)); }
+      const tr=document.createElement('tr');
+      tr.innerHTML='<td>'+DATA[i][0]+'</td><td>'+DATA[j][0]+'</td><td class="r">'+(j-i+1)+'</td>'+
+        '<td class="r '+(move<0?'teal':'ember')+'">'+move.toFixed(1)+'%</td>'+
+        '<td class="r '+(pnl>=1?'teal':'ember')+'">'+((pnl-1)*100).toFixed(1)+'%</td>';
+      tb.appendChild(tr); count++; i=j+1;
+    } else i++;
+  }
+  document.getElementById('epCount').textContent=count+' episodes in '+((new Date(DATA[DATA.length-1][0]).getFullYear())-1986)+' years';
+}
+
+
+function pct(v,min,max){ return Math.max(0,Math.min(100,(v-min)/(max-min)*100)); }
+function buildTrack(id, zones, ticks, needleV, min, max, label){
+  const t=document.getElementById(id); t.innerHTML='';
+  for(const z of zones){
+    const d=document.createElement('div'); d.className='zone';
+    d.style.left=pct(z[0],min,max)+'%';
+    d.style.width=(pct(z[1],min,max)-pct(z[0],min,max))+'%';
+    d.style.background=z[2]; t.appendChild(d);
+  }
+  for(const tk of ticks){
+    const d=document.createElement('div'); d.className='tick';
+    d.style.left=pct(tk,min,max)+'%'; d.textContent=tk; t.appendChild(d);
+  }
+  const n=document.createElement('div'); n.className='needle';
+  n.style.left=pct(needleV,min,max)+'%'; t.appendChild(n);
+}
+function renderHero(i){
+  const p=state.pos[i];
+  const box=document.getElementById('regimeBox');
+  box.className='regime '+(p===2?'r2':(p===1?'r1':'rb'));
+  const wolf=document.getElementById('wolfLine');
+  if(p===2){wolf.textContent='THE WOLF IS CHAINED — FULL STRENGTH'; wolf.style.color='var(--teal)';}
+  else if(p===1){wolf.textContent='THE WOLF IS CHAINED — HALF STRENGTH'; wolf.style.color='var(--good)';}
+  else{wolf.textContent='THE WOLF IS LOOSED'; wolf.style.color='var(--ember)';}
+  document.getElementById('regimeInstr').textContent =
+    (p===2?'Hold XACT Bull 2 (SE0003051010)':(p===1?'Hold plain OMXS30 1\u00d7 ETF':'Hold XACT Bear 2 (SE0005466505)'))+
+    ' \u00b7 next review: coming Friday close';
+  const dim='rgba(60,72,86,.35)';
+  const distMA=100*(state.O[i]/state.mo.M52[i]-1);
+  buildTrack('tLadder',[[-25,0,'rgba(34,48,59,.9)'],[0,25,'rgba(111,212,190,.25)']],[-20,-10,0,10,20],distMA,-25,25);
+  document.getElementById('gLadderV').textContent=(distMA>=0?'+':'')+distMA.toFixed(1)+'% \u2192 \u00d7'+(distMA>=0?'2':'1');
+  const rsiZ=[[0,35,'rgba(224,64,122,.30)'],[35,69,dim],[69,100,'rgba(111,212,190,.30)']];
+  buildTrack('tOR',rsiZ,[35,50,69],state.mo.R[i],0,100);
+  document.getElementById('gOR').textContent=state.mo.R[i].toFixed(1);
+  buildTrack('tSR',rsiZ,[35,50,69],state.ms.R[i],0,100);
+  document.getElementById('gSR').textContent=state.ms.R[i].toFixed(1);
+  const mcZ=[[-6,-2,'rgba(224,84,48,.35)'],[-2,4,dim]];
+  buildTrack('tOM',mcZ,[-2,0,2],state.mo.MP[i],-6,4);
+  document.getElementById('gOM').textContent=state.mo.MP[i].toFixed(2)+(state.mo.MP[i]<=-2?' \u00b7 GATE BLOCK':'');
+  buildTrack('tSM',mcZ,[-2,0,2],state.ms.MP[i],-6,4);
+  document.getElementById('gSM').textContent=state.ms.MP[i].toFixed(2)+(state.ms.MP[i]<=-2?' \u00b7 GATE BLOCK':'');
+  const moZ=[[-12,-4,'rgba(224,84,48,.35)'],[-4,12,dim]];
+  buildTrack('tOMo',moZ,[-4,0,4],state.mo.mom4[i],-12,12);
+  document.getElementById('gOMo').textContent=state.mo.mom4[i].toFixed(1)+'%';
+  buildTrack('tSMo',moZ,[-4,0,4],state.ms.mom4[i],-12,12);
+  document.getElementById('gSMo').textContent=state.ms.mom4[i].toFixed(1)+'%';
+  const cons=([2,2,0,-2][state.mo.st[i]]+[2,2,0,-2][state.ms.st[i]])/2;
+  const cd=document.getElementById('tCons'); cd.innerHTML='';
+  for(const v of [-2,-1,0,1,2]){
+    const d=document.createElement('div');
+    d.className='cd'+(v===cons?(v===2?' on2':(v===1?' on1':(v===0?' on0':' onm'))):'');
+    d.title=String(v); cd.appendChild(d);
+  }
+  document.getElementById('gCons').textContent=cons.toFixed(1)+(cons===-2?' \u00b7 RAGNAR\u00d6K':'');
+}
+
+
+function renderSaga(){
+  document.querySelectorAll('.era').forEach((el,k)=>{
+    const a=el.dataset.from, b=el.dataset.to;
+    let i0=DATA.findIndex(r=>r[0]>=a); let i1=DATA.length-1;
+    for(let j=DATA.length-1;j>=0;j--){ if(DATA[j][0]<=b){ i1=j; break; } }
+    if(i0<0||i1<=i0) return;
+    // window returns: Fenrir vs x2 B&H vs x1
+    let f=1,x2=1,x1=1, w2=0,w1=0,wb=0;
+    for(let j=i0+1;j<=i1;j++){
+      const r=state.O[j]/state.O[j-1]-1;
+      f*=(1+state.pos[j-1]*r);
+      if(state.pos[j]!==state.pos[j-1]) f*=(1-0.0015*Math.abs(state.pos[j]-state.pos[j-1])/2);
+      x2*=(1+2*r); x1*=(1+r);
+    }
+    for(let j=i0;j<=i1;j++){ if(state.pos[j]===2)w2++; else if(state.pos[j]===1)w1++; else wb++; }
+    const pctf=v=>((v-1)*100).toFixed(0)+'%';
+    document.getElementById('sagastat'+k).innerHTML=
+      'Fenrir <b>'+(f>=1?'+':'')+pctf(f)+'</b> \u00b7 \u00d72 B&H '+(x2>=1?'+':'')+pctf(x2)+
+      ' \u00b7 index '+(x1>=1?'+':'')+pctf(x1)+
+      ' \u00b7 weeks: '+w2+' at \u00d72, '+w1+' chained'+(wb>0?', <b style="color:var(--ember)">'+wb+' loosed</b>':'');
+    // mini chain strip
+    const c=document.getElementById('saga'+k);
+    const dpr=window.devicePixelRatio||1, W=c.clientWidth||860, H=18;
+    c.width=W*dpr; c.height=H*dpr; c.style.height=H+'px';
+    const ctx=c.getContext('2d'); ctx.scale(dpr,dpr);
+    const n=i1-i0+1, bw=Math.max(W/n,0.8);
+    for(let j=i0;j<=i1;j++){
+      const p=state.pos[j];
+      ctx.fillStyle = p===2?'rgba(111,212,190,0.8)':(p===1?'#22303B':'#E05430');
+      const x=(j-i0)/(n-1)*(W-bw);
+      const y=p===-2?0:(p===1?6:2), hh=p===-2?H:(p===1?H-9:H-4);
+      ctx.fillRect(x,y,bw,hh);
+    }
+  });
+}
+
+function render(){
+  const m=DATA.length, i=m-1;
+  const p=state.pos[i];
+  const posTxt=p===2?'BULL ×2':(p===1?'BULL ×1':'BEAR ×2');
+  const el=document.getElementById('curPos');
+  el.textContent=posTxt; el.className='pos '+(p===2?'pos-2':(p===1?'pos-1':'pos--2'));
+  document.getElementById('curDt').textContent=DATA[i][0]+' · OMX '+DATA[i][1].toLocaleString()+' · SPX '+DATA[i][2].toLocaleString();
+  const so=state.mo.st[i], ss=state.ms.st[i];
+  const eo=document.getElementById('omxState'); eo.textContent=NAMES[so]; eo.className='v '+CLS[so];
+  const es=document.getElementById('spxState'); es.textContent=NAMES[ss]; es.className='v '+CLS[ss];
+  document.getElementById('omxDetail').textContent='RSI '+state.mo.R[i].toFixed(1)+' · MACD% '+state.mo.MP[i].toFixed(2)+' · Mom4w '+state.mo.mom4[i].toFixed(1)+'%';
+  document.getElementById('spxDetail').textContent='RSI '+state.ms.R[i].toFixed(1)+' · MACD% '+state.ms.MP[i].toFixed(2)+' · Mom4w '+state.ms.mom4[i].toFixed(1)+'%';
+  const above=state.O[i]>state.mo.M52[i];
+  const ls=document.getElementById('ladderState');
+  ls.textContent=(above?'ABOVE':'BELOW')+' MA52';
+  ls.className='v '+(above?'st-BULL':'st-CASH');
+  const cons=([2,2,0,-2][so]+[2,2,0,-2][ss])/2;
+  document.getElementById('consDetail').textContent='MA52w '+state.mo.M52[i].toFixed(0)+' ('+(100*(state.O[i]/state.mo.M52[i]-1)).toFixed(1)+'%) · consensus lev '+cons.toFixed(1);
+  renderHero(i);
+  const wp=state.posW[i], sw_=state.mw.st[i];
+  const wPosTxt=wp===2?'BULL \u00d72':(wp===1?'BULL \u00d71':'BEAR \u00d72');
+  const wEl=document.getElementById('wPos');
+  wEl.textContent=wPosTxt; wEl.className='v '+(wp===2?'st-BULL':(wp===1?'st-BULLTR':'st-BEAR'));
+  document.getElementById('wInstr').textContent=wp===2?'Amundi 2x Lev — LVWC (FR0014010HV4)':(wp===1?'plain MSCI World ETF':'\u22122x S&P 500 proxy');
+  const wSt=document.getElementById('wState'); wSt.textContent=NAMES[sw_]; wSt.className='v '+CLS[sw_];
+  document.getElementById('wDetail').textContent='RSI '+state.mw.R[i].toFixed(1)+' \u00b7 MACD% '+state.mw.MP[i].toFixed(2)+' \u00b7 Mom4w '+state.mw.mom4[i].toFixed(1)+'%';
+  const wAbove=state.W[i]>state.mw.M52[i];
+  const wl=document.getElementById('wLadder'); wl.textContent=(wAbove?'ABOVE':'BELOW')+' MA52';
+  wl.className='v '+(wAbove?'st-BULL':'st-CASH');
+  document.getElementById('wMa').textContent='World '+state.W[i].toLocaleString()+' \u00b7 MA52w '+state.mw.M52[i].toFixed(0)+' ('+(100*(state.W[i]/state.mw.M52[i]-1)).toFixed(1)+'%)';
+  drawChain(); drawWChain(); drawPrice(); drawEquity(); renderEpisodes(); renderSaga();
+}
+
+function appendWeeks(weeks){
+  // weeks: [{date, omx, spx}] sorted ascending; validate
+  const last=DATA[DATA.length-1];
+  let added=0, prevPos=state.pos[state.pos.length-1];
+  for(const wk of weeks){
+    if(!(wk.date>last[0]||added>0&&wk.date>DATA[DATA.length-1][0])) continue;
+    const d=new Date(wk.date+'T12:00:00');
+    if(d.getUTCDay()!==5&&d.getDay()!==5) continue;
+    const po=DATA[DATA.length-1];
+    if(!(wk.omx>po[1]*0.75&&wk.omx<po[1]*1.25)) continue;
+    if(!(wk.spx>po[2]*0.75&&wk.spx<po[2]*1.25)) continue;
+    let wv = wk.world;
+    if(!(wv>po[3]*0.75&&wv<po[3]*1.25)) wv = po[3];  // fallback: carry last World value if missing/bad
+    DATA.push([wk.date, Math.round(wk.omx*100)/100, Math.round(wk.spx*100)/100, Math.round(wv*100)/100]);
+    added++;
+  }
+  if(added>0){
+    compute();
+    const newPos=state.pos[state.pos.length-1];
+    if(newPos!==prevPos){
+      const b=document.getElementById('switchBanner');
+      const t=newPos===2?'BULL ×2 — XACT BULL 2':(newPos===1?'BULL ×1 — OMXS30 1× ETF':'BEAR ×2 — XACT BEAR 2 · THE WOLF IS LOOSED');
+      b.textContent='REGIME CHANGE — SWITCH TO '+t+' AT MONDAY CLOSE';
+      b.style.display='block';
+    }
+  }
+  return added;
+}
+
+document.getElementById('pullBtn').addEventListener('click', async ()=>{
+  const btn=document.getElementById('pullBtn'), msg=document.getElementById('msg');
+  btn.disabled=true; msg.textContent='Asking Claude to search for the latest Friday closes…'; msg.className='msg mut';
+  const last=DATA[DATA.length-1][0];
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6', max_tokens:1000,
+        tools:[{type:'web_search_20250305', name:'web_search'}],
+        messages:[{role:'user', content:
+          'Find the weekly FRIDAY CLOSING values of (a) the OMXS30 index (Stockholm), (b) the S&P 500 index, and (c) the MSCI World index (price index, USD) for every Friday AFTER '+last+' up to the most recent completed Friday. Use web search. If a Friday was a market holiday, use that week\'s last trading day close but report it under the Friday date. Respond with ONLY a JSON object, no prose, no markdown fences, exactly: {"weeks":[{"date":"YYYY-MM-DD","omx":1234.56,"spx":1234.56,"world":1234.56}]} sorted oldest first. If no new completed Friday exists yet, respond {"weeks":[]}.'}]
+      })
+    });
+    const data=await resp.json();
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    const clean=text.replace(/```json|```/g,'').trim();
+    const start=clean.indexOf('{');
+    const parsed=JSON.parse(clean.slice(start));
+    const weeks=(parsed.weeks||[]).sort((a,b)=>a.date<b.date?-1:1);
+    if(weeks.length===0){ msg.textContent='No new completed Friday since '+last+'.'; }
+    else{
+      const added=appendWeeks(weeks);
+      msg.textContent=added>0?('Added '+added+' week(s). Latest: '+DATA[DATA.length-1][0]+'.')
+        :'Fetched data failed validation (dates/values) — use manual entry below.';
+      msg.className='msg '+(added>0?'teal':'ember');
+    }
+  }catch(e){
+    msg.textContent='Pull failed ('+e.message+'). Enter the two closes manually below.'; msg.className='msg ember';
+  }
+  btn.disabled=false;
+});
+
+document.getElementById('addBtn').addEventListener('click',()=>{
+  const o=parseFloat(document.getElementById('mOmx').value.replace(',','.'));
+  const s=parseFloat(document.getElementById('mSpx').value.replace(',','.'));
+  const wv=parseFloat(document.getElementById('mWld').value.replace(',','.'));
+  const msg=document.getElementById('msg');
+  if(!(o>0&&s>0)){ msg.textContent='Enter both closes.'; msg.className='msg ember'; return; }
+  const last=new Date(DATA[DATA.length-1][0]+'T12:00:00');
+  last.setDate(last.getDate()+7);
+  const date=last.toISOString().slice(0,10);
+  const added=appendWeeks([{date, omx:o, spx:s, world:(wv>0?wv:undefined)}]);
+  msg.textContent=added?('Added '+date+'.'):'Validation failed (±25% sanity vs prior week).';
+  msg.className='msg '+(added?'teal':'ember');
+  if(added){document.getElementById('mOmx').value='';document.getElementById('mSpx').value='';}
+});
+
+document.getElementById('copyBtn').addEventListener('click',()=>{
+  const blob=JSON.stringify(DATA);
+  navigator.clipboard.writeText(blob).then(()=>{
+    const msg=document.getElementById('msg');
+    msg.textContent='Data copied ('+DATA.length+' weeks). Paste back in chat to re-bake the file.';
+    msg.className='msg teal';
+  });
+});
+
+window.addEventListener('resize',()=>{ if(state) render(); });
+compute();
+</script>
+</body>
+</html>
