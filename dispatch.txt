@@ -1,6 +1,6 @@
-FENRIR WEEKLY DISPATCH · week ending 2026-11-06
-OMXS30 3,267.88 (-0.1%) · S&P 500 7,376.86 (-2.7%)
-Position held: ×2 → Fenrir week: -0.2%
+FENRIR WEEKLY DISPATCH · week ending 2026-11-13
+OMXS30 3,356.87 (+2.7%) · S&P 500 7,561.67 (+2.5%)
+Position held: ×2 → Fenrir week: +5.4%
 No regime change. Hold: BULL ×2 — XACT Bull 2 (SE0003051010).
-Ladder: +5.4% vs MA52w · OMX machine BULL-TR (RSI 55.9, MACD% 0.68) · S&P machine BULL-TR (RSI 45.8, MACD% 0.61)
-Data: appended 2026-11-06: OMX 3267.88 SPX 7376.86 WLD 4739.9
+Ladder: +7.9% vs MA52w · OMX machine BULL-TR (RSI 61.4, MACD% 0.78) · S&P machine BULL-TR (RSI 53.2, MACD% 0.51)
+Data: appended 2026-11-13: OMX 3356.87 SPX 7561.67 WLD 4852.0
